@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#78B829">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Allenamenti — Volley 2001 Garlasco</title>
+<style>
+:root{
+  --verde:#78B829; --verde-scuro:#5E9220; --verde-tenue:#EAF4DC;
+  --ground:#F4F6F7; --surface:#fff; --surface2:#EEF2F4;
+  --ink:#15202B; --muted:#65737D; --faint:#98A4AC;
+  --line:#D8DFE3; --line2:#BCC7CE; --pen:#1B3A6B;
+  --campo:#DCEBE1; --campo2:#C2DCCB; --warm:#A9601C; --focus:#5E9220;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --verde:#8FCB3D; --verde-scuro:#6FA82B; --verde-tenue:#1D2A15;
+  --ground:#0F1418; --surface:#18212A; --surface2:#212C36;
+  --ink:#E6ECF0; --muted:#93A1AA; --faint:#6B7A85;
+  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC;
+  --campo:#1E3128; --campo2:#2A4636; --warm:#CD8F4F; --focus:#8FCB3D;
+}}
+:root[data-theme="dark"]{
+  --verde:#8FCB3D; --verde-scuro:#6FA82B; --verde-tenue:#1D2A15;
+  --ground:#0F1418; --surface:#18212A; --surface2:#212C36;
+  --ink:#E6ECF0; --muted:#93A1AA; --faint:#6B7A85;
+  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC;
+  --campo:#1E3128; --campo2:#2A4636; --warm:#CD8F4F; --focus:#8FCB3D;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+body{padding-bottom:env(safe-area-inset-bottom)}
+
+/* ---------- testata di marca ---------- */
+.brand{background:var(--verde);color:#0E1A05;padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+  padding-top:calc(10px + env(safe-area-inset-top))}
+.brand .logo{width:38px;height:38px;flex:none}
+.brand .wm{font-weight:800;letter-spacing:-.02em;line-height:1;font-size:18px}
+.brand .wm small{display:block;font-weight:700;font-size:15px;letter-spacing:.01em}
+.brand .sp{flex:1}
+.brand button{background:rgba(0,0,0,.14);border:0;color:#0E1A05;font:inherit;
+  font-size:13px;font-weight:600;border-radius:6px;padding:6px 12px;cursor:pointer}
+
+.wrap{max-width:940px;margin:0 auto;padding:14px 14px 90px}
+h2{font-size:15px;margin:0;font-weight:640;letter-spacing:-.01em}
+.lab{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:650;margin:0 0 4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:13px;margin-bottom:12px}
+input[type=text],input[type=date],input[type=number],textarea,select{
+  width:100%;padding:8px 10px;font:inherit;font-size:15px;color:var(--ink);
+  background:var(--surface2);border:1px solid var(--line);border-radius:7px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--focus);outline-offset:-1px}
+button{font:inherit;cursor:pointer}
+.btn{background:transparent;border:1px solid var(--line2);color:var(--ink);
+  border-radius:7px;padding:7px 13px;font-size:14px}
+.btn:hover{border-color:var(--verde-scuro);color:var(--verde-scuro)}
+.btn.pri{background:var(--verde);border-color:var(--verde);color:#0E1A05;font-weight:640}
+.btn.on{background:var(--verde);border-color:var(--verde);color:#0E1A05}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid3{display:grid;grid-template-columns:1fr 1fr 2fr;gap:9px}
+@media(max-width:620px){.grid3{grid-template-columns:1fr 1fr}}
+
+/* ---------- rosa ---------- */
+.rosa{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
+.ruolo{display:flex;align-items:center;gap:6px;background:var(--surface2);
+  border:1px solid var(--line);border-radius:7px;padding:4px 7px}
+.ruolo b{font-size:11.5px;color:var(--verde-scuro);min-width:20px;font-weight:700}
+.ruolo input{background:transparent;border:0;padding:2px 0;font-size:14px;min-width:0}
+.pres{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{border:1px solid var(--line2);border-radius:99px;padding:4px 11px;font-size:13.5px;
+  background:transparent;color:var(--ink)}
+.pchip.on{background:var(--verde);border-color:var(--verde);color:#0E1A05;font-weight:600}
+.pchip small{color:var(--muted);font-size:11px;margin-right:3px}
+.pchip.on small{color:#2A4405}
+
+/* ---------- blocchi ---------- */
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  margin-bottom:12px;overflow:hidden}
+.blk header{display:flex;gap:8px;align-items:center;padding:9px 11px;
+  background:var(--surface2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.blk header .area{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--verde-scuro);background:var(--verde-tenue);border-radius:4px;padding:2px 7px}
+.blk header .sp{flex:1}
+.blk header button{background:transparent;border:1px solid var(--line2);border-radius:6px;
+  padding:3px 9px;font-size:12.5px;color:var(--muted)}
+.blk .body{padding:11px}
+.blk .tit{margin-bottom:8px}
+.stage{position:relative;border:1px solid var(--line);border-radius:8px;
+  overflow:hidden;background:var(--surface);touch-action:none}
+canvas{display:block;width:100%;touch-action:none}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.tools .sp{flex:1}
+.tag{display:inline-block;font-size:11.5px;border-radius:99px;padding:1px 8px;margin:4px 4px 0 0;
+  background:var(--verde-tenue);color:var(--verde-scuro)}
+.tag.g{background:var(--surface2);color:var(--muted)}
+
+/* ---------- barra ---------- */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);
+  border-top:1px solid var(--line);padding:10px 14px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:9px;align-items:center;flex-wrap:wrap;z-index:40}
+.bar .sp{flex:1}
+.stato{font-size:12px;color:var(--muted)}
+
+/* ---------- archivio ---------- */
+.sess{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;margin-bottom:9px;cursor:pointer}
+.sess b{font-variant-numeric:tabular-nums}
+.sess .sp{flex:1}
+.sess .meta{font-size:12.5px;color:var(--muted)}
+.vuoto{color:var(--muted);text-align:center;padding:36px 10px}
+
+.hidden{display:none!important}
+@media print{
+  .brand,.bar,.tools,.blk header button,.noprint{display:none!important}
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .blk,.card{break-inside:avoid;border-color:#bbb}
+}
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+    <path d="M20 2 L36 7 v16 c0 8-7 13-16 15C11 36 4 31 4 23V7z" fill="#0E1A05"/>
+    <path d="M20 5 L33 9 v14 c0 6.5-6 10.8-13 12.6C13 33.8 7 29.5 7 23V9z" fill="#fff"/>
+    <ellipse cx="20" cy="19" rx="6.5" ry="8" fill="#141414"/>
+    <ellipse cx="20" cy="21" rx="4" ry="6" fill="#fff"/>
+    <circle cx="17.6" cy="14" r="1.5" fill="#fff"/><circle cx="22.4" cy="14" r="1.5" fill="#fff"/>
+    <circle cx="17.6" cy="14" r=".8" fill="#141414"/><circle cx="22.4" cy="14" r=".8" fill="#141414"/>
+    <path d="M20 16.4 l1.6 1.4-1.6 1.4-1.6-1.4z" fill="#E8A020"/>
+    <rect x="9" y="29" width="22" height="2.4" fill="#E8A020"/>
+  </svg>
+  <div class="wm">VOLLEY<span style="font-weight:600">2001</span><small>GARLASCO</small></div>
+  <span class="sp"></span>
+  <button id="vArchivio">Archivio</button>
+  <button id="vRosa">Rosa</button>
+</div>
+
+<!-- ============ ALLENAMENTO ============ -->
+<div class="wrap" id="pgAllenamento">
+  <div class="card">
+    <div class="grid3">
+      <div><label class="lab" for="fNum">Allenamento n°</label>
+      <input type="number" id="fNum" inputmode="numeric"></div>
+      <div><label class="lab" for="fData">Data</label><input type="date" id="fData"></div>
+      <div><label class="lab" for="fTema">Tema</label><input type="text" id="fTema"
+        placeholder="es. tecnica a gruppi in previsione Monza"></div>
+    </div>
+    <div style="margin-top:11px">
+      <label class="lab">Presenti <span id="nPres" style="color:var(--verde-scuro)"></span></label>
+      <div class="pres" id="presenti"></div>
+    </div>
+  </div>
+
+  <div id="blocchi"></div>
+
+  <div class="card noprint">
+    <label class="lab">Aggiungi esercitazione</label>
+    <div class="row" id="addArea"></div>
+  </div>
+</div>
+
+<!-- ============ ROSA ============ -->
+<div class="wrap hidden" id="pgRosa">
+  <div class="card">
+    <h2>Rosa della stagione</h2>
+    <p style="color:var(--muted);font-size:14px;margin:6px 0 12px">
+      Si compila una volta. I nomi restano legati al ruolo, e i ruoli sono
+      quelli che finiscono nei tag degli esercizi.</p>
+    <div class="rosa" id="rosaGrid"></div>
+  </div>
+</div>
+
+<!-- ============ ARCHIVIO ============ -->
+<div class="wrap hidden" id="pgArchivio">
+  <div class="row" style="margin-bottom:12px">
+    <h2 style="flex:1">Allenamenti salvati</h2>
+    <button class="btn" id="expTutto">Esporta tutto</button>
+  </div>
+  <div id="listaSess"></div>
+</div>
+
+<div class="bar">
+  <span class="stato" id="stato">—</span>
+  <span class="sp"></span>
+  <button class="btn" id="bNuovo">Nuovo</button>
+  <button class="btn" id="bPdf">PDF</button>
+  <button class="btn pri" id="bSalva">Salva</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Allenamenti — Volley 2001 Garlasco",
+  "short_name": "Allenamenti",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F6F7",
+  "theme_color": "#78B829",
+  "icons": [
+    {"src": "icona-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icona-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
