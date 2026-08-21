@@ -1,11 +1,12 @@
 /* Allenamenti — Volley 2001 Garlasco
    Dati locali in IndexedDB. L'export su File e' la copia che sopravvive all'app. */
 
+// campo: quello che si apre per primo scegliendo l'area. Sempre cambiabile.
 const AREE = [
-  {k:'RIS', n:'Riscaldamento'},
-  {k:'TEC', n:'Parte tecnica'},
-  {k:'SIN', n:'Sintetica'},
-  {k:'GIO', n:'Gioco principale'},
+  {k:'RIS', n:'Riscaldamento',    campo:'bianco'},
+  {k:'TEC', n:'Parte tecnica',    campo:'intero'},
+  {k:'SIN', n:'Sintetica',        campo:'intero'},
+  {k:'GIO', n:'Gioco principale', campo:'intero'},
 ];
 const RUOLI = ['P1','P2','O1','O2','S1','S2','S3','S4','C1','C2','C3','C4','L1','L2','U'];
 const CAMPI = [
@@ -44,7 +45,7 @@ const DB = {
     t.oncomplete=ris; t.onerror=()=>rif(t.error); }); },
 };
 
-let rosa = {}, sessione = null, salvaTimer = null;
+let rosa = {}, ospiti = [], sessione = null, salvaTimer = null;
 
 /* ---------------- disegno del campo ---------------- */
 function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
@@ -178,12 +179,12 @@ function spezza(testo,area){
 function nuovaSessione(n){
   const oggi = new Date();
   const iso = new Date(oggi.getTime()-oggi.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-  return {id:'s_'+Date.now(), num:n||1, data:iso, tema:'', presenti:[], blocchi:[],
-          creata:Date.now(), modificata:Date.now()};
+  return {id:'s_'+Date.now(), num:n||1, data:iso, tema:'', presenti:[], ospiti:[],
+          blocchi:[], creata:Date.now(), modificata:Date.now()};
 }
 function nuovoBlocco(area){
   return {id:'b_'+Date.now()+'_'+Math.round(performance.now()*1000%1e6),
-          area, campo: area==='GIO'?'intero':'meta',
+          area, campo:(AREE.find(a=>a.k===area)||{}).campo||'intero',
           testo:'', nota:'', ruoli:[], tratti:[], dito:false};
 }
 function segnaModifica(){
@@ -226,7 +227,7 @@ function rendiRosa(){
 function rendiPresenti(){
   const p=document.getElementById('presenti'); p.innerHTML='';
   const con = RUOLI.filter(r=>rosa[r]);
-  if(!con.length){
+  if(!con.length && !(sessione&&sessione.ospiti.length)){
     p.innerHTML='<span style="color:var(--muted);font-size:14px">'+
       'Compila prima la rosa (in alto a destra).</span>';
     document.getElementById('nPres').textContent=''; return;
@@ -234,8 +235,7 @@ function rendiPresenti(){
   con.forEach(r=>{
     const b=document.createElement('button'); b.className='pchip';
     b.innerHTML='<small>'+r+'</small> '+rosa[r];
-    const on = sessione && sessione.presenti.includes(r);
-    b.classList.toggle('on',!!on);
+    b.classList.toggle('on', !!(sessione && sessione.presenti.includes(r)));
     b.addEventListener('click',()=>{
       if(!sessione) return;
       const i=sessione.presenti.indexOf(r);
@@ -244,11 +244,40 @@ function rendiPresenti(){
     });
     p.appendChild(b);
   });
+  // ospiti della seduta: sempre considerati presenti, si tolgono col tocco
+  (sessione?sessione.ospiti:[]).forEach((o,k)=>{
+    const b=document.createElement('button'); b.className='pchip osp on';
+    b.innerHTML='<small>'+o.ruolo+'</small> '+o.nome+' <span aria-hidden="true">×</span>';
+    b.title='ospite — tocca per toglierlo';
+    b.addEventListener('click',()=>{ sessione.ospiti.splice(k,1);
+      segnaModifica(); rendiPresenti(); });
+    p.appendChild(b);
+  });
+  const add=document.createElement('button'); add.className='pchip agg';
+  add.textContent='+ ospite';
+  add.addEventListener('click',apriOspite);
+  p.appendChild(add);
   contaPresenti();
 }
+function apriOspite(){
+  if(!sessione) return;
+  const liberi = RUOLI.filter(r=>!rosa[r]);
+  const suggerito = liberi[0] || 'U';
+  const ruolo = (prompt('Ruolo dell\'ospite ('+RUOLI.join(' ')+')', suggerito)||'').trim().toUpperCase();
+  if(!ruolo) return;
+  if(!RUOLI.includes(ruolo)){ alert('Ruolo non valido.'); return; }
+  const elenco = ospiti.length ? '\n\nGia\' usati: '+ospiti.join(', ') : '';
+  const nome = (prompt('Nome dell\'ospite per '+ruolo+elenco, '')||'').trim();
+  if(!nome) return;
+  sessione.ospiti.push({ruolo,nome});
+  if(!ospiti.includes(nome)){ ospiti.push(nome); DB.put('config',{k:'ospiti',v:ospiti}); }
+  segnaModifica(); rendiPresenti();
+}
 function contaPresenti(){
+  const n = sessione ? sessione.presenti.length + sessione.ospiti.length : 0;
+  const o = sessione ? sessione.ospiti.length : 0;
   document.getElementById('nPres').textContent =
-    sessione && sessione.presenti.length ? '· '+sessione.presenti.length : '';
+    n ? '· '+n+(o?' (di cui '+o+' ospit'+(o===1?'e':'i')+')':'') : '';
 }
 function rendiBlocchi(){
   const w=document.getElementById('blocchi'); w.innerHTML='';
@@ -347,7 +376,8 @@ async function rendiArchivio(){
     d.innerHTML='<b>'+String(s.num).padStart(3,'0')+'</b>'+
       '<div><div>'+(s.tema||'<i style="color:var(--muted)">senza tema</i>')+'</div>'+
       '<div class="meta">'+s.data+' · '+n+' esercitazion'+(n===1?'e':'i')+
-      ' · '+s.presenti.length+' presenti</div></div><span class="sp"></span>';
+      ' · '+(s.presenti.length+((s.ospiti||[]).length))+' presenti</div></div>'+
+      '<span class="sp"></span>';
     const b=document.createElement('button'); b.className='btn'; b.textContent='Apri';
     b.addEventListener('click',async e=>{ e.stopPropagation();
       sessione=s; caricaForm(); mostra('pgAllenamento'); });
@@ -359,6 +389,7 @@ async function rendiArchivio(){
   });
 }
 function caricaForm(){
+  if(!sessione.ospiti) sessione.ospiti=[];
   document.getElementById('fNum').value=sessione.num;
   document.getElementById('fData').value=sessione.data;
   document.getElementById('fTema').value=sessione.tema;
@@ -376,6 +407,7 @@ function scarica(nome,testo,tipo){
 (async function(){
   await DB.apri();
   const c=await DB.get('config','rosa'); rosa=(c&&c.v)||{};
+  const g=await DB.get('config','ospiti'); ospiti=(g&&g.v)||[];
   const ss=await DB.tutte('sessioni');
   const ultimo=ss.reduce((m,s)=>Math.max(m,s.num||0),0);
   // Riprende l'allenamento di oggi invece di aprirne uno nuovo: se la pagina
@@ -412,7 +444,7 @@ function scarica(nome,testo,tipo){
   document.getElementById('expTutto').addEventListener('click',async()=>{
     const tutte=await DB.tutte('sessioni');
     scarica('allenamenti-'+new Date().toISOString().slice(0,10)+'.json',
-            JSON.stringify({rosa,sessioni:tutte},null,1));
+            JSON.stringify({rosa,ospiti,sessioni:tutte},null,1));
   });
 
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
