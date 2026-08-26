@@ -90,7 +90,9 @@ function attaccaPenna(cv, blocco){
   const minW=1.5, gain=2.8, expo=0.7;
 
   function layout(){
-    W=cv.clientWidth; H=Math.round(W*(blocco.campo==='bianco'?0.42:0.58));
+    const w=cv.clientWidth;
+    if(!w){ return; }               // non ancora impaginato: si riprova all'evento di resize
+    W=w; H=Math.round(W*(blocco.campo==='bianco'?0.42:0.58));
     cv.style.height=H+'px'; cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     ctx.setTransform(DPR,0,0,DPR,0,0); ridisegna();
   }
@@ -112,23 +114,59 @@ function attaccaPenna(cv, blocco){
     if(cur) paint(cur,1);
   }
   function pt(e){
+    if(!W||!H) return null;         // senza dimensioni le coordinate sarebbero infinite
     const r=cv.getBoundingClientRect();
     let pr=e.pressure; if(!(pr>0)) pr=0.35;
     return {x:(e.clientX-r.left)/W, y:(e.clientY-r.top)/H, w:minW+Math.pow(pr,expo)*gain};
   }
+  // distanza in pixel fra un punto e un segmento
+  function distSeg(px,py,ax,ay,bx,by){
+    const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+    let t = l2 ? ((px-ax)*dx+(py-ay)*dy)/l2 : 0;
+    t = Math.max(0,Math.min(1,t));
+    return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+  }
+  const RAGGIO=13;                       // tolleranza della gomma, in pixel
+  function cancellaSotto(e){
+    if(!W||!H) return false;
+    const r=cv.getBoundingClientRect();
+    const px=e.clientX-r.left, py=e.clientY-r.top;
+    let tolto=false;
+    for(let k=blocco.tratti.length-1;k>=0;k--){
+      const s=blocco.tratti[k];
+      for(let i=1;i<s.length;i++){
+        if(distSeg(px,py,s[i-1].x*W,s[i-1].y*H,s[i].x*W,s[i].y*H) <= RAGGIO){
+          blocco.tratti.splice(k,1); tolto=true; break;
+        }
+      }
+    }
+    if(tolto){ ridisegna(); segnaModifica(); }
+    return tolto;
+  }
+  // il pennino rovesciato, dove esiste, cancella sempre
+  function inGomma(e){ return blocco.gomma || e.pointerType==='eraser'; }
   cv.addEventListener('pointerdown',e=>{
-    if(e.pointerType!=='pen' && !blocco.dito){ e.preventDefault(); return; }
-    if(activeId!==null) return;
-    activeId=e.pointerId; cur=[pt(e)]; drawn=1; e.preventDefault();
+    if(e.pointerType!=='pen' && e.pointerType!=='eraser' && !blocco.dito){
+      e.preventDefault(); return; }
+    // se un tratto precedente e' rimasto aperto (chiusura mai arrivata) lo si
+    // conclude qui: altrimenti il canvas resterebbe bloccato per sempre
+    if(activeId!==null) fine(null);
+    activeId=e.pointerId; e.preventDefault();
+    if(inGomma(e)){ cancellaSotto(e); return; }
+    const q=pt(e); if(!q){ activeId=null; return; }
+    cur=[q]; drawn=1;
   },{passive:false});
   function move(e){
-    if(cur===null || e.pointerId!==activeId) return;
+    if(e.pointerId!==activeId) return;
+    if(inGomma(e)){ cancellaSotto(e); e.preventDefault(); return; }
+    if(cur===null) return;
     // se la lista dei punti intermedi e' vuota si usa l'evento stesso:
     // altrimenti il tratto verrebbe scartato
     let evs=e.getCoalescedEvents?e.getCoalescedEvents():null;
     if(!evs||!evs.length) evs=[e];
     for(const ev of evs){
-      const q=pt(ev), l=cur[cur.length-1];
+      const q=pt(ev); if(!q) continue;
+      const l=cur[cur.length-1];
       if(Math.hypot((q.x-l.x)*W,(q.y-l.y)*H)<0.4) continue;
       cur.push(q);
     }
@@ -137,7 +175,7 @@ function attaccaPenna(cv, blocco){
   if('onpointerrawupdate' in cv) cv.addEventListener('pointerrawupdate',move,{passive:false});
   cv.addEventListener('pointermove',move,{passive:false});
   function fine(e){
-    if(e && e.pointerId!==activeId) return;
+    if(e && activeId!==null && e.pointerId!==activeId) return;
     if(cur && cur.length>1){ blocco.tratti.push(cur); segnaModifica(); }
     cur=null; activeId=null; drawn=0;
   }
@@ -147,6 +185,11 @@ function attaccaPenna(cv, blocco){
   cv.addEventListener('touchmove', e=>{if(!blocco.dito)e.preventDefault();},{passive:false});
   addEventListener('resize',layout);
   matchMedia('(prefers-color-scheme:dark)').addEventListener('change',ridisegna);
+  // impagina appena il canvas riceve una dimensione, qualunque ne sia il motivo
+  if(window.ResizeObserver){
+    const ro=new ResizeObserver(()=>{ if(cv.clientWidth && cv.clientWidth!==W) layout(); });
+    ro.observe(cv);
+  }
   setTimeout(layout,0);
   return {layout,ridisegna};
 }
@@ -185,7 +228,7 @@ function nuovaSessione(n){
 function nuovoBlocco(area){
   return {id:'b_'+Date.now()+'_'+Math.round(performance.now()*1000%1e6),
           area, campo:(AREE.find(a=>a.k===area)||{}).campo||'intero',
-          testo:'', nota:'', ruoli:[], tratti:[], dito:false};
+          testo:'', nota:'', ruoli:[], tratti:[], dito:false, gomma:false};
 }
 function segnaModifica(){
   if(!sessione) return;
@@ -284,6 +327,7 @@ function rendiBlocchi(){
   sessione.blocchi.forEach((b,idx)=>w.appendChild(rendiBlocco(b,idx)));
 }
 function rendiBlocco(b,idx){
+  if(b.gomma===undefined) b.gomma=false;
   const el=document.createElement('div'); el.className='blk';
   const area=AREE.find(a=>a.k===b.area)||AREE[1];
 
@@ -331,11 +375,13 @@ function rendiBlocco(b,idx){
 
   const tools=document.createElement('div'); tools.className='tools';
   const und=document.createElement('button'); und.className='btn'; und.textContent='Annulla tratto';
+  const gom=document.createElement('button'); gom.className='btn'+(b.gomma?' on':'');
+  gom.textContent='Gomma'; gom.title='tocca i tratti da cancellare';
   const dito=document.createElement('button'); dito.className='btn'; dito.textContent='Solo Pencil';
   const nota=document.createElement('input'); nota.type='text'; nota.value=b.nota;
   nota.placeholder='vincoli, punteggio, note'; nota.style.marginTop='8px';
   nota.addEventListener('input',()=>{ b.nota=nota.value; segnaModifica(); });
-  tools.append(und,dito);
+  tools.append(und,gom,dito);
   body.append(tools,nota);
 
   if(b.area==='TEC'||b.area==='SIN'){
@@ -357,6 +403,9 @@ function rendiBlocco(b,idx){
   setTimeout(()=>{
     const p=attaccaPenna(cv,b);
     und.addEventListener('click',()=>{ b.tratti.pop(); p.ridisegna(); segnaModifica(); });
+    gom.addEventListener('click',()=>{ b.gomma=!b.gomma;
+      gom.classList.toggle('on',b.gomma);
+      stage.style.cursor = b.gomma ? 'cell' : 'crosshair'; });
     dito.addEventListener('click',()=>{ b.dito=!b.dito;
       dito.textContent=b.dito?'Pencil + dito':'Solo Pencil'; dito.classList.toggle('on',b.dito); });
   },0);
