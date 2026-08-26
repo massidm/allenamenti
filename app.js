@@ -49,6 +49,7 @@ const DB = {
 };
 
 let rosa = {}, ospiti = [], sessione = null, salvaTimer = null;
+let pennaGiu = false;      // vero mentre un tratto e' in corso
 
 /* ---------------- disegno del campo ---------------- */
 function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
@@ -88,6 +89,8 @@ function disegnaCampo(ctx,W,H,tipo){
 /* ---------------- scrittura con la Pencil ---------------- */
 function attaccaPenna(cv, blocco){
   const ctx=cv.getContext('2d');
+  let inchiostro=css('--pen');
+  const rinfresca=()=>{ inchiostro=css('--pen'); };
   const DPR=Math.min(devicePixelRatio||1,3);
   let W=0,H=0,cur=null,activeId=null,drawn=0;
   const minW=1.5, gain=2.8, expo=0.7;
@@ -101,7 +104,7 @@ function attaccaPenna(cv, blocco){
   }
   function paint(s,from){
     if(s.length<2) return;
-    ctx.strokeStyle=css('--pen'); ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.strokeStyle=inchiostro; ctx.lineCap='round'; ctx.lineJoin='round';
     for(let i=Math.max(1,from);i<s.length;i++){
       const a=s[i-1], b=s[i];
       ctx.beginPath(); ctx.lineWidth=(a.w+b.w)/2; ctx.moveTo(a.x*W,a.y*H);
@@ -155,8 +158,9 @@ function attaccaPenna(cv, blocco){
     // conclude qui: altrimenti il canvas resterebbe bloccato per sempre
     if(activeId!==null) fine(null);
     activeId=e.pointerId; e.preventDefault();
+    pennaGiu=true;
     if(inGomma(e)){ cancellaSotto(e); return; }
-    const q=pt(e); if(!q){ activeId=null; return; }
+    const q=pt(e); if(!q){ activeId=null; pennaGiu=false; return; }
     cur=[q]; drawn=1;
   },{passive:false});
   function move(e){
@@ -175,10 +179,13 @@ function attaccaPenna(cv, blocco){
     }
     paint(cur,drawn); drawn=cur.length-1; e.preventDefault();
   }
+  // uno solo dei due: registrandoli entrambi ogni movimento veniva elaborato
+  // e ridisegnato due volte, e la scrittura perdeva scorrevolezza
   if('onpointerrawupdate' in cv) cv.addEventListener('pointerrawupdate',move,{passive:false});
-  cv.addEventListener('pointermove',move,{passive:false});
+  else cv.addEventListener('pointermove',move,{passive:false});
   function fine(e){
     if(e && activeId!==null && e.pointerId!==activeId) return;
+    pennaGiu=false;
     if(cur && cur.length>1){ blocco.tratti.push(cur); segnaModifica(); }
     cur=null; activeId=null; drawn=0;
   }
@@ -187,7 +194,7 @@ function attaccaPenna(cv, blocco){
   cv.addEventListener('touchstart',e=>{if(!blocco.dito)e.preventDefault();},{passive:false});
   cv.addEventListener('touchmove', e=>{if(!blocco.dito)e.preventDefault();},{passive:false});
   addEventListener('resize',layout);
-  matchMedia('(prefers-color-scheme:dark)').addEventListener('change',ridisegna);
+  matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{rinfresca();ridisegna();});
   // impagina appena il canvas riceve una dimensione, qualunque ne sia il motivo
   if(window.ResizeObserver){
     const ro=new ResizeObserver(()=>{ if(cv.clientWidth && cv.clientWidth!==W) layout(); });
@@ -237,7 +244,12 @@ function segnaModifica(){
   if(!sessione) return;
   sessione.modificata=Date.now();
   clearTimeout(salvaTimer);
-  salvaTimer=setTimeout(salva,600);
+  // il salvataggio serializza tutta la seduta: rimandarlo finche' la penna e'
+  // appoggiata evita che il tratto scatti a meta'
+  salvaTimer=setTimeout(function attendi(){
+    if(pennaGiu){ salvaTimer=setTimeout(attendi,400); return; }
+    salva();
+  },1200);
 }
 async function salva(){
   if(!sessione) return;
@@ -251,6 +263,41 @@ function raccogli(){
   sessione.num  = +document.getElementById('fNum').value || 1;
   sessione.data = document.getElementById('fData').value;
   sessione.tema = document.getElementById('fTema').value;
+}
+
+/* ---------------- editor di testo a comparsa ----------------
+   Su iPadOS toccare un campo di testo con la Pencil attiva Scribble invece
+   della tastiera, e il campo vicino al foglio intercetta i tratti al bordo.
+   Scrivere in un pannello separato toglie il conflitto e permette di dare il
+   fuoco a mano, cosi' la tastiera compare sempre. */
+function apriEditor(titolo, valore, aiuto, quandoFatto){
+  const sf=document.createElement('div'); sf.className='sfondo';
+  const pn=document.createElement('div'); pn.className='pannello';
+  const h3=document.createElement('h3'); h3.textContent=titolo;
+  const ta=document.createElement('textarea');
+  ta.value=valore||''; ta.setAttribute('aria-label',titolo);
+  ta.autocapitalize='sentences'; ta.spellcheck=false;
+  const az=document.createElement('div'); az.className='azioni';
+  const ann=document.createElement('button'); ann.className='btn'; ann.textContent='Annulla';
+  const ok=document.createElement('button'); ok.className='btn pri'; ok.textContent='Fatto';
+  az.append(ann,ok); pn.append(h3,ta);
+  if(aiuto){ const p2=document.createElement('p'); p2.className='sugg';
+    p2.textContent=aiuto; pn.appendChild(p2); }
+  pn.appendChild(az); sf.appendChild(pn); document.body.appendChild(sf);
+  const chiudi=()=>{ sf.remove(); };
+  ann.addEventListener('click',chiudi);
+  ok.addEventListener('click',()=>{ quandoFatto(ta.value); chiudi(); });
+  sf.addEventListener('click',e=>{ if(e.target===sf){ quandoFatto(ta.value); chiudi(); }});
+  ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){
+    quandoFatto(ta.value); chiudi(); }});
+  ta.focus();                       // dentro il gesto dell'utente: la tastiera compare
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function campoTesto(valore, segnaposto){
+  const d=document.createElement('button');
+  d.type='button'; d.className='campo'+(valore?'':' vuoto');
+  d.textContent = valore || segnaposto;
+  return d;
 }
 
 /* ---------------- interfaccia ---------------- */
@@ -357,10 +404,13 @@ function rendiBlocco(b,idx){
   h.append(su,gi,el2);
 
   const body=document.createElement('div'); body.className='body';
-  const t=document.createElement('input'); t.type='text'; t.className='tit'; t.value=b.testo;
-  t.placeholder = b.area==='GIO' ? 'es. C/P + conferma P/A  (il + e’ il pallone successivo)'
-                                 : 'es. Batt / Rice + Mini-Set P/A';
-  t.setAttribute('aria-label','esercitazioni');
+  const segna = b.area==='GIO' ? 'es. C/P + conferma P/A'
+                               : 'es. Batt / Rice + Mini-Set P/A';
+  const aiuto = b.area==='GIO'
+    ? 'Il + indica il pallone successivo della stessa situazione. Usa ; per separare due esercitazioni.'
+    : 'Il + separa le esercitazioni. Quello fra parentesi diventa una variante.';
+  const t=campoTesto(b.testo, segna);
+  t.setAttribute('aria-label','esercitazioni del blocco');
   const tg=document.createElement('div');
   function tags(){
     tg.innerHTML='';
@@ -370,7 +420,12 @@ function rendiBlocco(b,idx){
         x.className='tag'+(c==='g'?' g':''); x.textContent=l; tg.appendChild(x);});
     });
   }
-  t.addEventListener('input',()=>{ b.testo=t.value; tags(); segnaModifica(); });
+  t.addEventListener('click',()=>apriEditor('Esercitazioni', b.testo, aiuto, v=>{
+    b.testo=v.trim();
+    t.textContent = b.testo || segna;
+    t.classList.toggle('vuoto', !b.testo);
+    tags(); segnaModifica();
+  }));
   body.append(t,tg);
 
   const stage=document.createElement('div'); stage.className='stage';
@@ -381,9 +436,16 @@ function rendiBlocco(b,idx){
   const gom=document.createElement('button'); gom.className='btn'+(b.gomma?' on':'');
   gom.textContent='Gomma'; gom.title='tocca i tratti da cancellare';
   const dito=document.createElement('button'); dito.className='btn'; dito.textContent='Solo Pencil';
-  const nota=document.createElement('input'); nota.type='text'; nota.value=b.nota;
-  nota.placeholder='vincoli, punteggio, note'; nota.style.marginTop='8px';
-  nota.addEventListener('input',()=>{ b.nota=nota.value; segnaModifica(); });
+  const nota=campoTesto(b.nota,'vincoli, punteggio, note');
+  nota.style.marginTop='8px';
+  nota.setAttribute('aria-label','vincoli, punteggio, note');
+  nota.addEventListener('click',()=>apriEditor('Vincoli, punteggio, note', b.nota,
+    'es. da 15-15. Ace +2, errore battuta -1. A +4 burpees per l\u2019altra squadra.', v=>{
+      b.nota=v.trim();
+      nota.textContent = b.nota || 'vincoli, punteggio, note';
+      nota.classList.toggle('vuoto', !b.nota);
+      segnaModifica();
+    }));
   tools.append(und,gom,dito);
   body.append(tools,nota);
 

@@ -123,6 +123,21 @@ canvas{display:block;width:100%;touch-action:none}
   background:var(--warm-soft, #F8EFE4);color:var(--warm);border:1px solid currentColor}
 .avviso.ok{background:var(--verde-tenue);color:var(--verde-scuro)}
 
+.campo{width:100%;padding:9px 11px;font:inherit;font-size:15px;color:var(--ink);
+  background:var(--surface2);border:1px solid var(--line);border-radius:7px;
+  text-align:left;min-height:40px;display:block;cursor:text;white-space:pre-wrap;
+  word-break:break-word}
+.campo.vuoto{color:var(--faint)}
+.campo:focus-visible{outline:2px solid var(--focus);outline-offset:-1px}
+.sfondo{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:100;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
+.pannello{background:var(--surface);border-radius:12px;padding:16px;width:100%;
+  max-width:620px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.pannello h3{margin:0 0 10px;font-size:15px;font-weight:650}
+.pannello textarea{width:100%;min-height:120px;font-size:16px;line-height:1.4;
+  font-family:inherit;resize:vertical}
+.pannello .azioni{display:flex;gap:9px;justify-content:flex-end;margin-top:12px}
+.pannello .sugg{font-size:12.5px;color:var(--muted);margin:8px 0 0}
 .hidden{display:none!important}
 @media print{
   .brand,.bar,.tools,.blk header button,.noprint{display:none!important}
