@@ -7,7 +7,10 @@ const AREE = [
   {k:'TEC', n:'Parte tecnica',    campo:'intero'},
   {k:'SIN', n:'Sintetica',        campo:'intero'},
   {k:'GIO', n:'Gioco principale', campo:'intero'},
+  {k:'APP', n:'Appunti',          campo:'bianco'},   // riunioni, briefing, promemoria
 ];
+// aree che non sono esercitazioni: restano fuori dall'eserciziario
+const NON_ESERCIZI = ['APP'];
 const RUOLI = ['P1','P2','O1','O2','S1','S2','S3','S4','C1','C2','C3','C4','L1','L2','U'];
 const CAMPI = [
   {k:'intero', n:'Campo intero'},
@@ -415,6 +418,7 @@ function rendiBlocco(b,idx){
 
 /* ---------------- archivio ---------------- */
 async function rendiArchivio(){
+  aggiornaAvviso();
   const l=document.getElementById('listaSess');
   const ss=(await DB.tutte('sessioni')).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   if(!ss.length){ l.innerHTML='<p class="vuoto">Nessun allenamento salvato.</p>'; return; }
@@ -444,12 +448,45 @@ function caricaForm(){
   document.getElementById('fTema').value=sessione.tema;
   rendiPresenti(); rendiBlocchi(); stato('—');
 }
-function scarica(nome,testo,tipo){
-  const b=new Blob([testo],{type:tipo||'application/json'});
+async function scarica(nome,testo,tipo){
+  const mime = tipo||'application/json';
+  const b=new Blob([testo],{type:mime});
+  // su iPad il foglio di condivisione permette "Salva su File": e' la via buona
+  try{
+    const f=new File([b],nome,{type:mime});
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      await navigator.share({files:[f], title:nome});
+      await segnaEsportazione(); return 'condiviso';
+    }
+  }catch(err){ if(err && err.name==='AbortError') return 'annullato'; }
   const u=URL.createObjectURL(b);
   const a=document.createElement('a'); a.href=u; a.download=nome;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),4000);
+  await segnaEsportazione(); return 'scaricato';
+}
+async function segnaEsportazione(){
+  await DB.put('config',{k:'ultimoExport', v:Date.now()});
+  aggiornaAvviso();
+}
+async function aggiornaAvviso(){
+  const el=document.getElementById('avvisoExport'); if(!el) return;
+  const r=await DB.get('config','ultimoExport');
+  const n=(await DB.tutte('sessioni')).length;
+  if(!n){ el.textContent=''; el.className='hidden'; return; }
+  if(!r||!r.v){
+    el.className='avviso';
+    el.textContent='Non hai mai esportato una copia. I dati vivono solo su questo dispositivo.';
+    return;
+  }
+  const gg=Math.floor((Date.now()-r.v)/864e5);
+  if(gg>=14){
+    el.className='avviso';
+    el.textContent='Ultima copia esportata '+gg+' giorni fa. Conviene rifarla.';
+  } else {
+    el.className='avviso ok';
+    el.textContent='Ultima copia esportata '+(gg===0?'oggi':gg+' giorn'+(gg===1?'o':'i')+' fa')+'.';
+  }
 }
 
 /* ---------------- avvio ---------------- */
@@ -492,8 +529,10 @@ function scarica(nome,testo,tipo){
   document.getElementById('vArchivio').addEventListener('click',()=>{rendiArchivio();mostra('pgArchivio');});
   document.getElementById('expTutto').addEventListener('click',async()=>{
     const tutte=await DB.tutte('sessioni');
-    scarica('allenamenti-'+new Date().toISOString().slice(0,10)+'.json',
-            JSON.stringify({rosa,ospiti,sessioni:tutte},null,1));
+    const nome='allenamenti-'+new Date().toISOString().slice(0,10)+'.json';
+    const esito=await scarica(nome, JSON.stringify(
+      {versione:1, esportato:new Date().toISOString(), rosa, ospiti, sessioni:tutte},null,1));
+    if(esito==='scaricato') alert('Salvato nei Download di Safari come '+nome+'.');
   });
 
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});

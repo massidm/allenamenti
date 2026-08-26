@@ -14,21 +14,21 @@
   --verde:#92BE1F; --verde-scuro:#6C8E15; --verde-tenue:#EDF5DB;
   --ground:#F4F6F7; --surface:#fff; --surface2:#EEF2F4;
   --ink:#15202B; --muted:#65737D; --faint:#98A4AC;
-  --line:#D8DFE3; --line2:#BCC7CE; --pen:#1B3A6B;
+  --line:#D8DFE3; --line2:#BCC7CE; --pen:#1B3A6B; --warm-soft:#F8EFE4;
   --campo:#DCEBE1; --campo2:#C2DCCB; --warm:#A9601C; --focus:#5E9220;
 }
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --verde:#A6D42E; --verde-scuro:#8FBB22; --verde-tenue:#1F2B12;
   --ground:#0F1418; --surface:#18212A; --surface2:#212C36;
   --ink:#E6ECF0; --muted:#93A1AA; --faint:#6B7A85;
-  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC;
+  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC; --warm-soft:#2C2015;
   --campo:#1E3128; --campo2:#2A4636; --warm:#CD8F4F; --focus:#8FCB3D;
 }}
 :root[data-theme="dark"]{
   --verde:#A6D42E; --verde-scuro:#8FBB22; --verde-tenue:#1F2B12;
   --ground:#0F1418; --surface:#18212A; --surface2:#212C36;
   --ink:#E6ECF0; --muted:#93A1AA; --faint:#6B7A85;
-  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC;
+  --line:#28343E; --line2:#3A4854; --pen:#9CC0EC; --warm-soft:#2C2015;
   --campo:#1E3128; --campo2:#2A4636; --warm:#CD8F4F; --focus:#8FCB3D;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -119,6 +119,9 @@ canvas{display:block;width:100%;touch-action:none}
 .sess .sp{flex:1}
 .sess .meta{font-size:12.5px;color:var(--muted)}
 .vuoto{color:var(--muted);text-align:center;padding:36px 10px}
+.avviso{font-size:13.5px;border-radius:8px;padding:9px 12px;margin:0 0 12px;
+  background:var(--warm-soft, #F8EFE4);color:var(--warm);border:1px solid currentColor}
+.avviso.ok{background:var(--verde-tenue);color:var(--verde-scuro)}
 
 .hidden{display:none!important}
 @media print{
@@ -180,6 +183,7 @@ canvas{display:block;width:100%;touch-action:none}
     <h2 style="flex:1">Allenamenti salvati</h2>
     <button class="btn" id="expTutto">Esporta tutto</button>
   </div>
+  <p id="avvisoExport" class="hidden"></p>
   <div id="listaSess"></div>
 </div>
 
