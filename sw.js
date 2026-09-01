@@ -1,6 +1,6 @@
 // Cache offline: l'app deve aprirsi in palestra anche senza rete.
-const CACHE = 'allenamenti-v4';
-const FILES = ['./', './index.html', './app.js', './manifest.webmanifest',
+const CACHE = 'allenamenti-v5';
+const FILES = ['./', './index.html', './app.js', './esercizi.js', './manifest.webmanifest',
                './logo.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

@@ -270,7 +270,7 @@ function raccogli(){
    della tastiera, e il campo vicino al foglio intercetta i tratti al bordo.
    Scrivere in un pannello separato toglie il conflitto e permette di dare il
    fuoco a mano, cosi' la tastiera compare sempre. */
-function apriEditor(titolo, valore, aiuto, quandoFatto){
+function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
   const sf=document.createElement('div'); sf.className='sfondo';
   const pn=document.createElement('div'); pn.className='pannello';
   const h3=document.createElement('h3'); h3.textContent=titolo;
@@ -283,6 +283,42 @@ function apriEditor(titolo, valore, aiuto, quandoFatto){
   az.append(ann,ok); pn.append(h3,ta);
   if(aiuto){ const p2=document.createElement('p'); p2.className='sugg';
     p2.textContent=aiuto; pn.appendChild(p2); }
+  // Elenco dei nomi gia' usati: si tocca invece di scrivere. La tastiera
+  // resta l'eccezione, non la regola.
+  if(conElenco && typeof ESERCIZI!=='undefined'){
+    const cerca=document.createElement('input');
+    cerca.type='search'; cerca.className='cerca';
+    cerca.placeholder='cerca fra i '+ESERCIZI.length+' esercizi gia\' usati';
+    cerca.setAttribute('aria-label','cerca un esercizio');
+    const el=document.createElement('div'); el.className='elenco';
+    function mostra(q){
+      el.innerHTML='';
+      const t=(q||'').trim().toLowerCase();
+      let n=0;
+      for(const nome of ESERCIZI){
+        if(t && nome.toLowerCase().indexOf(t)<0) continue;
+        if(++n>40) break;
+        const b=document.createElement('button');
+        b.type='button'; b.className='voce';
+        if(t){ const i=nome.toLowerCase().indexOf(t);
+          b.append(nome.slice(0,i));
+          const em=document.createElement('b'); em.textContent=nome.slice(i,i+t.length);
+          b.append(em, nome.slice(i+t.length));
+        } else b.textContent=nome;
+        b.addEventListener('click',()=>{
+          const v=ta.value.trim();
+          ta.value = v ? v+' + '+nome : nome;
+          cerca.value=''; mostra('');
+        });
+        el.appendChild(b);
+      }
+      if(!n){ const d=document.createElement('div'); d.className='vuoto2';
+        d.textContent='nessuno: scrivilo qui sopra'; el.appendChild(d); }
+    }
+    cerca.addEventListener('input',()=>mostra(cerca.value));
+    mostra('');
+    pn.append(cerca, el);
+  }
   pn.appendChild(az); sf.appendChild(pn); document.body.appendChild(sf);
   const chiudi=()=>{ sf.remove(); };
   ann.addEventListener('click',chiudi);
@@ -290,8 +326,10 @@ function apriEditor(titolo, valore, aiuto, quandoFatto){
   sf.addEventListener('click',e=>{ if(e.target===sf){ quandoFatto(ta.value); chiudi(); }});
   ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){
     quandoFatto(ta.value); chiudi(); }});
-  ta.focus();                       // dentro il gesto dell'utente: la tastiera compare
-  ta.setSelectionRange(ta.value.length, ta.value.length);
+  if(!conElenco){
+    ta.focus();                     // dentro il gesto dell'utente: la tastiera compare
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }                                 // col selettore la tastiera si apre solo se tocchi il testo
 }
 function campoTesto(valore, segnaposto){
   const d=document.createElement('button');
@@ -425,7 +463,7 @@ function rendiBlocco(b,idx){
     t.textContent = b.testo || segna;
     t.classList.toggle('vuoto', !b.testo);
     tags(); segnaModifica();
-  }));
+  }, true));
   body.append(t,tg);
 
   const stage=document.createElement('div'); stage.className='stage';

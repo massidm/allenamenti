@@ -138,6 +138,16 @@ canvas{display:block;width:100%;touch-action:none}
   font-family:inherit;resize:vertical}
 .pannello .azioni{display:flex;gap:9px;justify-content:flex-end;margin-top:12px}
 .pannello .sugg{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.pannello .cerca{width:100%;margin-top:10px;padding:9px 11px;font-size:16px}
+.elenco{max-height:38vh;overflow-y:auto;margin-top:8px;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface2)}
+.elenco:empty{display:none}
+.voce{display:block;width:100%;text-align:left;padding:9px 12px;font:inherit;font-size:14.5px;
+  background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--ink);cursor:pointer}
+.voce:last-child{border-bottom:0}
+.voce:hover,.voce:focus-visible{background:var(--verde-tenue);color:var(--verde-scuro);outline:none}
+.voce b{color:var(--verde-scuro)}
+.vuoto2{padding:11px 12px;font-size:13px;color:var(--muted)}
 .hidden{display:none!important}
 @media print{
   .brand,.bar,.tools,.blk header button,.noprint{display:none!important}
@@ -210,6 +220,7 @@ canvas{display:block;width:100%;touch-action:none}
   <button class="btn pri" id="bSalva">Salva</button>
 </div>
 
+<script src="esercizi.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
