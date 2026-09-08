@@ -271,16 +271,21 @@ function raccogli(){
    Scrivere in un pannello separato toglie il conflitto e permette di dare il
    fuoco a mano, cosi' la tastiera compare sempre. */
 function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
+  let rif=null;
   const sf=document.createElement('div'); sf.className='sfondo';
   const pn=document.createElement('div'); pn.className='pannello';
   const h3=document.createElement('h3'); h3.textContent=titolo;
   const ta=document.createElement('textarea');
   ta.value=valore||''; ta.setAttribute('aria-label',titolo);
   ta.autocapitalize='sentences'; ta.spellcheck=false;
+  ta.classList.add('libero');
   const az=document.createElement('div'); az.className='azioni';
   const ann=document.createElement('button'); ann.className='btn'; ann.textContent='Annulla';
   const ok=document.createElement('button'); ok.className='btn pri'; ok.textContent='Fatto';
-  az.append(ann,ok); pn.append(h3,ta);
+  az.append(ann,ok);
+  const etLib=document.createElement('div'); etLib.className='etichetta-libero';
+  etLib.textContent='oppure scrivilo a mano';
+  pn.append(h3, etLib, ta);
   if(aiuto){ const p2=document.createElement('p'); p2.className='sugg';
     p2.textContent=aiuto; pn.appendChild(p2); }
   // Elenco dei nomi gia' usati: si tocca invece di scrivere. La tastiera
@@ -288,27 +293,45 @@ function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
   if(conElenco && typeof ESERCIZI!=='undefined'){
     const cerca=document.createElement('input');
     cerca.type='search'; cerca.className='cerca';
-    cerca.placeholder='cerca fra i '+ESERCIZI.length+' esercizi gia\' usati';
+    cerca.placeholder='cerca fra i '+ESERCIZI.length+' esercizi (tocca il disegno per vederlo)';
     cerca.setAttribute('aria-label','cerca un esercizio');
     const el=document.createElement('div'); el.className='elenco';
     function mostra(q){
       el.innerHTML='';
       const t=(q||'').trim().toLowerCase();
       let n=0;
-      for(const nome of ESERCIZI){
+      for(const es of ESERCIZI){
+        const nome=es.n;
         if(t && nome.toLowerCase().indexOf(t)<0) continue;
         if(++n>40) break;
         const b=document.createElement('button');
         b.type='button'; b.className='voce';
+        const fig=document.createElement('img');
+        fig.loading='lazy'; fig.alt='';
+        if(es.img) fig.src='esercizi/'+es.img;
+        b.appendChild(fig);
+        const nm=document.createElement('span'); nm.className='nm';
         if(t){ const i=nome.toLowerCase().indexOf(t);
-          b.append(nome.slice(0,i));
+          nm.append(nome.slice(0,i));
           const em=document.createElement('b'); em.textContent=nome.slice(i,i+t.length);
-          b.append(em, nome.slice(i+t.length));
-        } else b.textContent=nome;
+          nm.append(em, nome.slice(i+t.length));
+        } else nm.textContent=nome;
+        b.appendChild(nm);
+        const q=document.createElement('span'); q.className='q';
+        q.textContent=es.q+'\u00d7'; b.appendChild(q);
         b.addEventListener('click',()=>{
           const v=ta.value.trim();
           ta.value = v ? v+' + '+nome : nome;
           cerca.value=''; mostra('');
+        });
+        // il disegno in grande: per gli esercizi tecnici e' quello che conta
+        fig.addEventListener('click',ev=>{ ev.stopPropagation();
+          if(!es.img) return;
+          const z=document.createElement('div'); z.className='zoom';
+          const g=document.createElement('img'); g.src='esercizi/'+es.img; g.alt=nome;
+          const c=document.createElement('div'); c.className='cap'; c.textContent=nome;
+          z.append(g,c); document.body.appendChild(z);
+          z.addEventListener('click',()=>z.remove());
         });
         el.appendChild(b);
       }
@@ -316,7 +339,13 @@ function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
         d.textContent='nessuno: scrivilo qui sopra'; el.appendChild(d); }
     }
     cerca.addEventListener('input',()=>mostra(cerca.value));
-    mostra('');
+    // Invio sceglie il primo risultato: si compone senza staccare le mani
+    cerca.addEventListener('keydown',e=>{
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      const primo=el.querySelector('.voce'); if(primo) primo.click();
+    });
+    mostra(''); rif=cerca;
     pn.append(cerca, el);
   }
   pn.appendChild(az); sf.appendChild(pn); document.body.appendChild(sf);
@@ -326,10 +355,12 @@ function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
   sf.addEventListener('click',e=>{ if(e.target===sf){ quandoFatto(ta.value); chiudi(); }});
   ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){
     quandoFatto(ta.value); chiudi(); }});
-  if(!conElenco){
-    ta.focus();                     // dentro il gesto dell'utente: la tastiera compare
+  if(conElenco && rif){
+    rif.focus();                    // la tastiera si apre sulla ricerca, non sul testo libero
+  } else {
+    ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
-  }                                 // col selettore la tastiera si apre solo se tocchi il testo
+  }
 }
 function campoTesto(valore, segnaposto){
   const d=document.createElement('button');

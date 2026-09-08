@@ -134,16 +134,32 @@ canvas{display:block;width:100%;touch-action:none}
 .pannello{background:var(--surface);border-radius:12px;padding:16px;width:100%;
   max-width:620px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
 .pannello h3{margin:0 0 10px;font-size:15px;font-weight:650}
-.pannello textarea{width:100%;min-height:120px;font-size:16px;line-height:1.4;
+.pannello textarea{width:100%;min-height:76px;font-size:16px;line-height:1.4;
   font-family:inherit;resize:vertical}
+.pannello textarea.libero{order:9}
+.pannello{display:flex;flex-direction:column}
+.pannello h3{order:0}.pannello .cerca{order:1}.pannello .elenco{order:2}
+.pannello .sugg{order:8}.pannello .azioni{order:10}
+.etichetta-libero{order:8;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:600;margin:10px 0 4px}
 .pannello .azioni{display:flex;gap:9px;justify-content:flex-end;margin-top:12px}
 .pannello .sugg{font-size:12.5px;color:var(--muted);margin:8px 0 0}
 .pannello .cerca{width:100%;margin-top:10px;padding:9px 11px;font-size:16px}
 .elenco{max-height:38vh;overflow-y:auto;margin-top:8px;border:1px solid var(--line);
   border-radius:8px;background:var(--surface2)}
 .elenco:empty{display:none}
-.voce{display:block;width:100%;text-align:left;padding:9px 12px;font:inherit;font-size:14.5px;
+.voce{display:grid;grid-template-columns:78px 1fr auto;gap:11px;align-items:center;
+  width:100%;text-align:left;padding:8px 11px;font:inherit;font-size:14.5px;
   background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--ink);cursor:pointer}
+.voce img{width:78px;height:auto;border-radius:4px;border:1px solid var(--line);background:#fff;display:block}
+.voce .q{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.voce .nm{min-width:0;overflow-wrap:anywhere}
+.lente{border:0;background:transparent;padding:6px;cursor:pointer;color:var(--muted);font-size:17px}
+.lente:hover{color:var(--verde-scuro)}
+.zoom{position:fixed;inset:0;background:rgba(10,16,20,.72);z-index:200;display:flex;
+  align-items:center;justify-content:center;padding:20px}
+.zoom img{max-width:100%;max-height:82vh;border-radius:8px;background:#fff}
+.zoom .cap{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#fff;font-size:14px}
 .voce:last-child{border-bottom:0}
 .voce:hover,.voce:focus-visible{background:var(--verde-tenue);color:var(--verde-scuro);outline:none}
 .voce b{color:var(--verde-scuro)}
