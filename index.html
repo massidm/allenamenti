@@ -111,6 +111,13 @@ canvas{display:block;width:100%;touch-action:none}
   display:flex;gap:9px;align-items:center;flex-wrap:wrap;z-index:40}
 .bar .sp{flex:1}
 .stato{font-size:12px;color:var(--muted)}
+.ver{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.agg{position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));
+  background:var(--verde);color:#0E1A05;border-radius:9px;padding:11px 14px;
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  box-shadow:0 6px 24px rgba(0,0,0,.22);z-index:60;font-size:14px;font-weight:560}
+.agg button{background:rgba(0,0,0,.16);border:0;color:#0E1A05;font:inherit;
+  font-weight:660;border-radius:6px;padding:7px 14px;cursor:pointer}
 
 /* ---------- archivio ---------- */
 .sess{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--surface);
@@ -228,8 +235,13 @@ canvas{display:block;width:100%;touch-action:none}
   <div id="listaSess"></div>
 </div>
 
+<div id="avvisoAgg" class="agg hidden">
+  <span>C'è una versione nuova dell'app.</span>
+  <button id="aggiorna">Aggiorna ora</button>
+</div>
 <div class="bar">
   <span class="stato" id="stato">—</span>
+  <span class="ver" id="ver"></span>
   <span class="sp"></span>
   <button class="btn" id="bNuovo">Nuovo</button>
   <button class="btn" id="bPdf">PDF</button>

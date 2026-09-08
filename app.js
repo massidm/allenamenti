@@ -2,6 +2,8 @@
    Dati locali in IndexedDB. L'export su File e' la copia che sopravvive all'app. */
 
 // campo: quello che si apre per primo scegliendo l'area. Sempre cambiabile.
+const VERSIONE = '2026.09.08';
+
 const AREE = [
   {k:'RIS', n:'Riscaldamento',    campo:'bianco'},
   {k:'TEC', n:'Parte tecnica',    campo:'intero'},
@@ -666,6 +668,26 @@ async function aggiornaAvviso(){
     if(esito==='scaricato') alert('Salvato nei Download di Safari come '+nome+'.');
   });
 
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  document.getElementById('ver').textContent='v'+VERSIONE;
+  // Aggiornamento: l'app avvisa da sola invece di farti chiudere e riaprire
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      function guarda(sw){
+        if(!sw) return;
+        sw.addEventListener('statechange',()=>{
+          if(sw.state==='installed' && navigator.serviceWorker.controller)
+            document.getElementById('avvisoAgg').classList.remove('hidden');
+        });
+      }
+      guarda(reg.waiting); guarda(reg.installing);
+      reg.addEventListener('updatefound',()=>guarda(reg.installing));
+      setInterval(()=>reg.update().catch(()=>{}), 60*60*1000);
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+  }
+  document.getElementById('aggiorna').addEventListener('click',async()=>{
+    await salva();                       // niente si perde nel passaggio
+    location.reload();
+  });
   addEventListener('beforeunload',()=>{ if(sessione) DB.put('sessioni',sessione); });
 })();
