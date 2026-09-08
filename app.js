@@ -2,7 +2,7 @@
    Dati locali in IndexedDB. L'export su File e' la copia che sopravvive all'app. */
 
 // campo: quello che si apre per primo scegliendo l'area. Sempre cambiabile.
-const VERSIONE = '2026.09.08';
+const VERSIONE = '2026.09.08.2';
 
 const AREE = [
   {k:'RIS', n:'Riscaldamento',    campo:'bianco'},
@@ -671,7 +671,9 @@ async function aggiornaAvviso(){
   document.getElementById('ver').textContent='v'+VERSIONE;
   // Aggiornamento: l'app avvisa da sola invece di farti chiudere e riaprire
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').then(reg=>{
+    // updateViaCache 'none': il file del service worker si controlla sempre
+    // sulla rete, altrimenti la nuova versione non verrebbe nemmeno notata
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
       function guarda(sw){
         if(!sw) return;
         sw.addEventListener('statechange',()=>{
