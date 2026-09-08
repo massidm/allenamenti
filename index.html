@@ -112,11 +112,11 @@ canvas{display:block;width:100%;touch-action:none}
 .bar .sp{flex:1}
 .stato{font-size:12px;color:var(--muted)}
 .ver{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
-.agg{position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));
+.barra-agg{position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));
   background:var(--verde);color:#0E1A05;border-radius:9px;padding:11px 14px;
   display:flex;gap:12px;align-items:center;justify-content:space-between;
   box-shadow:0 6px 24px rgba(0,0,0,.22);z-index:60;font-size:14px;font-weight:560}
-.agg button{background:rgba(0,0,0,.16);border:0;color:#0E1A05;font:inherit;
+.barra-agg button{background:rgba(0,0,0,.16);border:0;color:#0E1A05;font:inherit;
   font-weight:660;border-radius:6px;padding:7px 14px;cursor:pointer}
 
 /* ---------- archivio ---------- */
@@ -235,9 +235,25 @@ canvas{display:block;width:100%;touch-action:none}
   <div id="listaSess"></div>
 </div>
 
-<div id="avvisoAgg" class="agg hidden">
+<div id="avvisoAgg" class="barra-agg hidden">
   <span>C'è una versione nuova dell'app.</span>
   <button id="aggiorna">Aggiorna ora</button>
+</div>
+<div class="sfondo hidden" id="pannelloBox">
+  <div class="pannello">
+    <h3 id="panTitolo">Esercitazioni</h3>
+    <input class="cerca" id="panCerca" type="search" inputmode="search"
+           autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+           aria-label="cerca un esercizio">
+    <div class="elenco" id="panElenco"></div>
+    <div class="etichetta-libero" id="panEtich">oppure scrivilo a mano</div>
+    <p class="sugg" id="panAiuto"></p>
+    <textarea class="libero" id="panTesto" aria-label="testo"></textarea>
+    <div class="azioni">
+      <button class="btn" id="panAnnulla">Annulla</button>
+      <button class="btn pri" id="panFatto">Fatto</button>
+    </div>
+  </div>
 </div>
 <div class="bar">
   <span class="stato" id="stato">—</span>

@@ -2,7 +2,7 @@
    Dati locali in IndexedDB. L'export su File e' la copia che sopravvive all'app. */
 
 // campo: quello che si apre per primo scegliendo l'area. Sempre cambiabile.
-const VERSIONE = '2026.09.08.2';
+const VERSIONE = '2026.09.08.3';
 
 const AREE = [
   {k:'RIS', n:'Riscaldamento',    campo:'bianco'},
@@ -273,96 +273,85 @@ function raccogli(){
    Scrivere in un pannello separato toglie il conflitto e permette di dare il
    fuoco a mano, cosi' la tastiera compare sempre. */
 function apriEditor(titolo, valore, aiuto, quandoFatto, conElenco){
-  let rif=null;
-  const sf=document.createElement('div'); sf.className='sfondo';
-  const pn=document.createElement('div'); pn.className='pannello';
-  const h3=document.createElement('h3'); h3.textContent=titolo;
-  const ta=document.createElement('textarea');
-  ta.value=valore||''; ta.setAttribute('aria-label',titolo);
-  ta.autocapitalize='sentences'; ta.spellcheck=false;
-  ta.classList.add('libero');
-  const az=document.createElement('div'); az.className='azioni';
-  const ann=document.createElement('button'); ann.className='btn'; ann.textContent='Annulla';
-  const ok=document.createElement('button'); ok.className='btn pri'; ok.textContent='Fatto';
-  az.append(ann,ok);
-  const etLib=document.createElement('div'); etLib.className='etichetta-libero';
-  etLib.textContent='oppure scrivilo a mano';
-  pn.append(h3, etLib, ta);
-  if(aiuto){ const p2=document.createElement('p'); p2.className='sugg';
-    p2.textContent=aiuto; pn.appendChild(p2); }
-  // Elenco dei nomi gia' usati: si tocca invece di scrivere. La tastiera
-  // resta l'eccezione, non la regola.
-  if(conElenco && typeof ESERCIZI!=='undefined'){
-    const cerca=document.createElement('input');
-    cerca.type='search'; cerca.className='cerca';
-    cerca.placeholder='cerca fra i '+ESERCIZI.length+' esercizi (tocca il disegno per vederlo)';
-    cerca.setAttribute('aria-label','cerca un esercizio');
-    const el=document.createElement('div'); el.className='elenco';
-    function mostra(q){
-      el.innerHTML='';
-      const t=(q||'').trim().toLowerCase();
-      let n=0;
-      for(const es of ESERCIZI){
-        const nome=es.n;
-        if(t && nome.toLowerCase().indexOf(t)<0) continue;
-        if(++n>40) break;
-        const b=document.createElement('button');
-        b.type='button'; b.className='voce';
-        const fig=document.createElement('img');
-        fig.loading='lazy'; fig.alt='';
-        if(es.img) fig.src='esercizi/'+es.img;
-        b.appendChild(fig);
-        const nm=document.createElement('span'); nm.className='nm';
-        if(t){ const i=nome.toLowerCase().indexOf(t);
-          nm.append(nome.slice(0,i));
-          const em=document.createElement('b'); em.textContent=nome.slice(i,i+t.length);
-          nm.append(em, nome.slice(i+t.length));
-        } else nm.textContent=nome;
-        b.appendChild(nm);
-        const q=document.createElement('span'); q.className='q';
-        q.textContent=es.q+'\u00d7'; b.appendChild(q);
-        b.addEventListener('click',()=>{
-          const v=ta.value.trim();
-          ta.value = v ? v+' + '+nome : nome;
-          cerca.value=''; mostra('');
-        });
-        // il disegno in grande: per gli esercizi tecnici e' quello che conta
-        fig.addEventListener('click',ev=>{ ev.stopPropagation();
-          if(!es.img) return;
-          const z=document.createElement('div'); z.className='zoom';
-          const g=document.createElement('img'); g.src='esercizi/'+es.img; g.alt=nome;
-          const c=document.createElement('div'); c.className='cap'; c.textContent=nome;
-          z.append(g,c); document.body.appendChild(z);
-          z.addEventListener('click',()=>z.remove());
-        });
-        el.appendChild(b);
-      }
-      if(!n){ const d=document.createElement('div'); d.className='vuoto2';
-        d.textContent='nessuno: scrivilo qui sopra'; el.appendChild(d); }
+  // Il pannello vive nella pagina fin dall'avvio: iOS apre la tastiera solo se
+  // l'elemento che riceve il fuoco esisteva gia' prima del tocco. Crearlo al
+  // momento, come facevo prima, la lasciava chiusa.
+  const box=document.getElementById('pannelloBox');
+  const ta=document.getElementById('panTesto');
+  const cerca=document.getElementById('panCerca');
+  const el=document.getElementById('panElenco');
+  const etich=document.getElementById('panEtich');
+  const aiu=document.getElementById('panAiuto');
+  document.getElementById('panTitolo').textContent=titolo;
+  ta.value=valore||'';
+  aiu.textContent=aiuto||''; aiu.classList.toggle('hidden', !aiuto);
+  cerca.value='';
+  cerca.classList.toggle('hidden', !conElenco);
+  el.classList.toggle('hidden', !conElenco);
+  etich.classList.toggle('hidden', !conElenco);
+
+  function mostra(q){
+    el.innerHTML='';
+    if(!conElenco || typeof ESERCIZI==='undefined') return;
+    const t=(q||'').trim().toLowerCase();
+    let n=0;
+    for(const es of ESERCIZI){
+      const nome=es.n;
+      if(t && nome.toLowerCase().indexOf(t)<0) continue;
+      if(++n>40) break;
+      const b=document.createElement('button');
+      b.type='button'; b.className='voce';
+      const fig=document.createElement('img');
+      fig.loading='lazy'; fig.alt='';
+      if(es.img) fig.src='esercizi/'+es.img;
+      b.appendChild(fig);
+      const nm=document.createElement('span'); nm.className='nm';
+      if(t){ const k=nome.toLowerCase().indexOf(t);
+        nm.append(nome.slice(0,k));
+        const em=document.createElement('b'); em.textContent=nome.slice(k,k+t.length);
+        nm.append(em, nome.slice(k+t.length));
+      } else nm.textContent=nome;
+      b.appendChild(nm);
+      const q2=document.createElement('span'); q2.className='q';
+      q2.textContent=es.q+'\u00d7'; b.appendChild(q2);
+      b.addEventListener('click',()=>{
+        const v=ta.value.trim();
+        ta.value = v ? v+' + '+nome : nome;
+        cerca.value=''; mostra(''); cerca.focus();
+      });
+      fig.addEventListener('click',ev=>{ ev.stopPropagation();
+        if(!es.img) return;
+        const z=document.createElement('div'); z.className='zoom';
+        const g=document.createElement('img'); g.src='esercizi/'+es.img; g.alt=nome;
+        const c=document.createElement('div'); c.className='cap'; c.textContent=nome;
+        z.append(g,c); document.body.appendChild(z);
+        z.addEventListener('click',()=>z.remove());
+      });
+      el.appendChild(b);
     }
-    cerca.addEventListener('input',()=>mostra(cerca.value));
-    // Invio sceglie il primo risultato: si compone senza staccare le mani
-    cerca.addEventListener('keydown',e=>{
-      if(e.key!=='Enter') return;
-      e.preventDefault();
-      const primo=el.querySelector('.voce'); if(primo) primo.click();
-    });
-    mostra(''); rif=cerca;
-    pn.append(cerca, el);
+    if(!n){ const d=document.createElement('div'); d.className='vuoto2';
+      d.textContent='nessuno: scrivilo qui sotto'; el.appendChild(d); }
   }
-  pn.appendChild(az); sf.appendChild(pn); document.body.appendChild(sf);
-  const chiudi=()=>{ sf.remove(); };
-  ann.addEventListener('click',chiudi);
-  ok.addEventListener('click',()=>{ quandoFatto(ta.value); chiudi(); });
-  sf.addEventListener('click',e=>{ if(e.target===sf){ quandoFatto(ta.value); chiudi(); }});
-  ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){
-    quandoFatto(ta.value); chiudi(); }});
-  if(conElenco && rif){
-    rif.focus();                    // la tastiera si apre sulla ricerca, non sul testo libero
-  } else {
-    ta.focus();
-    ta.setSelectionRange(ta.value.length, ta.value.length);
+  mostra('');
+
+  function chiudi(){
+    box.classList.add('hidden');
+    cerca.oninput=null; cerca.onkeydown=null;
+    document.getElementById('panFatto').onclick=null;
+    document.getElementById('panAnnulla').onclick=null;
+    box.onclick=null;
   }
+  cerca.oninput=()=>mostra(cerca.value);
+  cerca.onkeydown=e=>{ if(e.key!=='Enter') return; e.preventDefault();
+    const primo=el.querySelector('.voce'); if(primo) primo.click(); };
+  document.getElementById('panFatto').onclick=()=>{ quandoFatto(ta.value); chiudi(); };
+  document.getElementById('panAnnulla').onclick=chiudi;
+  box.onclick=e=>{ if(e.target===box){ quandoFatto(ta.value); chiudi(); } };
+
+  box.classList.remove('hidden');
+  const fuoco = conElenco ? cerca : ta;
+  fuoco.focus();
+  if(fuoco===ta) ta.setSelectionRange(ta.value.length, ta.value.length);
 }
 function campoTesto(valore, segnaposto){
   const d=document.createElement('button');
